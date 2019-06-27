@@ -6,6 +6,7 @@ const initialState = {
   frequentWords: ""
 };
 
+// Word Count
 let count = 0;
 
 const countWords = str => {
@@ -18,44 +19,45 @@ const deductCount = str => {
   return count;
 };
 
+//FreqWords
 let top5Words = "";
 
+//FreqWords - Tally function
 const wordFreq = post => {
   const words = post.body.replace(/[.]/g, "").split(/\s/);
   let freqMap = {};
-  words.forEach(function(w) {
+  words.forEach(w => {
     if (!freqMap[w]) {
       freqMap[w] = 0;
     }
     freqMap[w] += 1;
   });
-
   return freqMap;
 };
 
+//FreqWords - Tally function
 const wordListMap = posts => {
-  let list;
-  list = posts.map(post => wordFreq(post));
-  sortList(list);
-
-  console.log(list);
+  const res = {};
+  const list = posts.map(post => wordFreq(post));
+  [...list].map(item => {
+    Object.keys(item).map(iter => {
+      if (res.hasOwnProperty(iter)) {
+        res[iter] = res[iter] + item[iter];
+      } else {
+        res[iter] = item[iter];
+      }
+    });
+  });
+  sortList(res);
 };
 
+//FreqWords - Sort by highest function
 const sortList = list => {
-  let list2 = list[0];
-  let arr = Object.keys(list2).sort((a, b) => list2[b] - list2[a]);
-
-  //Attempt to merge
-  let newAttempt = list.map(list =>
-    Object.keys(list).sort((a, b) => list[b] - list[a])
-  );
-
+  let arr = Object.keys(list).sort((a, b) => list[b] - list[a]);
   top5Words = arr.slice(0, 5);
-  console.log(top5Words);
-
-  console.log(newAttempt);
 };
 
+// Redux
 export default function(state = initialState, action) {
   switch (action.type) {
     case GET_POSTS:
@@ -71,10 +73,12 @@ export default function(state = initialState, action) {
       const postId = action.payload.id;
       const postBody = action.payload.body;
       deductCount(postBody);
+      wordListMap(state.posts);
       return {
         ...state,
         posts: state.posts.filter(post => post.id !== postId),
-        wordCount: count
+        wordCount: count,
+        frequentWords: top5Words
       };
     default:
       return state;
